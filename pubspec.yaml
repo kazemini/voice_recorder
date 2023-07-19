@@ -21,7 +21,7 @@ dependencies:
   bloc: ^8.1.1
   flutter_bloc: ^8.1.2
   equatable: ^2.0.5
-  shared_preferences: ^2.0.17
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
   flutter_test:
