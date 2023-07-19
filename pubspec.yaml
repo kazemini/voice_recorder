@@ -16,6 +16,12 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+# packages that used for voice record project
+  flutter_sound: ^9.2.13
+  permission_handler: 8.1.6
+  path_provider: ^2.0.2
+
+#templete packages
   get_it: ^7.2.0
   cupertino_icons: ^1.0.2
   bloc: ^8.1.1
