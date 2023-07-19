@@ -72,7 +72,7 @@ class _MainWrapperState extends State<MainWrapper> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: const [
             /*
                 Center(
                 child: ElevatedButton(
@@ -114,31 +114,54 @@ class _MainWrapperState extends State<MainWrapper> {
                 ),
               ),
                */
+            SizedBox()
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        width: MediaQuery.of(context).size.width,
+        height: 60,
+        margin: const EdgeInsets.only(left: 8.0,right: 8.0,bottom: 8.0),
 
-            StreamBuilder<RecordingDisposition>(
-                stream: recorder.onProgress,
-                builder: (context, snapshot) {
-                  final duration = snapshot.hasData ? snapshot.data!.duration : Duration.zero;
-                  String twoDigits(int n) => n.toString().padLeft(2, '0');
-                  final twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-                  final twoDigitsSeconds = twoDigits(duration.inSeconds.remainder(60));
-
-                  return Text(
-                    '$twoDigitMinutes:$twoDigitsSeconds',
-                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-                  );
-                }),
-            Center(
-              child: SizedBox(
-                width: 100,
-                height: 100,
-                child: ElevatedButton(
-                  child: Icon(recorder.isRecording ? Icons.pause : Icons.mic, size: 40),
-                  onPressed: () async {
-                    recorder.isRecording ? await stop() : await record();
-                    setState(() {});
-                  },
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    color: Colors.green
                 ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    StreamBuilder<RecordingDisposition>(
+                        stream: recorder.onProgress,
+                        builder: (context, snapshot) {
+                          final duration = snapshot.hasData ? snapshot.data!.duration : Duration.zero;
+                          String twoDigits(int n) => n.toString().padLeft(2, '0');
+                          final twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+                          final twoDigitsSeconds = twoDigits(duration.inSeconds.remainder(60));
+
+                          return Text(
+                            '$twoDigitMinutes:$twoDigitsSeconds',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold,color: Colors.white),
+                          );
+                        }),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.all(6.0),
+              child: ElevatedButton(
+                onPressed: () async {
+                  recorder.isRecording ? await stop() : await record();
+                  setState(() {});
+                },
+                child: Icon(recorder.isRecording ? Icons.pause : Icons.mic, size: 35),
               ),
             )
           ],
