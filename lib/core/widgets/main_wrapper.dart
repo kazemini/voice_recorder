@@ -1,13 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:template/config/theme/theme_cubit.dart';
 
 import '../../config/utils/enums_config.dart';
 import '../../locator.dart';
 import '../database/shared_preferences_db.dart';
 import '../interface/app_router.dart';
-
-
 
 // TODO this page only for test, pls convert to clean arch :)
 //? contain page route & change theme test ;)
@@ -20,17 +23,58 @@ class MainWrapper extends StatefulWidget {
 }
 
 class _MainWrapperState extends State<MainWrapper> {
+  final recorder = FlutterSoundRecorder();
+  late final String _path;
+  @override
+  void initState() {
+    super.initState();
+    initRecorder();
+  }
+
+  @override
+  void dispose() {
+    recorder.closeRecorder();
+    super.dispose();
+  }
+
+  Future initRecorder() async {
+    final _directory = await getExternalStorageDirectory();
+    _path = '/storage/emulated/0/Download';
+    final status = await Permission.microphone.request();
+    await Permission.manageExternalStorage.request();
+    await Permission.storage.request();
+    if (status != PermissionStatus.granted) {
+      throw 'Microphone permission not granted!';
+    }
+    await recorder.openRecorder();
+    recorder.setSubscriptionDuration(
+      const Duration(milliseconds: 500),
+    );
+  }
+
+  Future record() async {
+    await recorder.startRecorder(toFile: '$_path/audio-test');
+  }
+
+  Future stop() async {
+   final path = await recorder.stopRecorder();
+   final audioFile = File(path!);
+   print('Recorded path is : $path');
+  }
 
   @override
   Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('قالب'),),
-        body: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Center(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ضبط کننده صدا'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            /*
+                Center(
                 child: ElevatedButton(
                     onPressed: () {
                       //? here is test of AppRouter using di & extend from dynamic abstract
@@ -69,9 +113,37 @@ class _MainWrapperState extends State<MainWrapper> {
                     child: const Text('حالت سیستم')
                 ),
               ),
-            ],
-          ),
+               */
+
+            StreamBuilder<RecordingDisposition>(
+                stream: recorder.onProgress,
+                builder: (context, snapshot) {
+                  final duration = snapshot.hasData ? snapshot.data!.duration : Duration.zero;
+                  String twoDigits(int n) => n.toString().padLeft(2, '0');
+                  final twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+                  final twoDigitsSeconds = twoDigits(duration.inSeconds.remainder(60));
+
+                  return Text(
+                    '$twoDigitMinutes:$twoDigitsSeconds',
+                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                  );
+                }),
+            Center(
+              child: SizedBox(
+                width: 100,
+                height: 100,
+                child: ElevatedButton(
+                  child: Icon(recorder.isRecording ? Icons.pause : Icons.mic, size: 40),
+                  onPressed: () async {
+                    recorder.isRecording ? await stop() : await record();
+                    setState(() {});
+                  },
+                ),
+              ),
+            )
+          ],
         ),
-      );
+      ),
+    );
   }
 }
