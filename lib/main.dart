@@ -56,15 +56,7 @@ class MyApp extends StatelessWidget {
 
 
 
-              // * Force RTL, by default => (farsi,iran)
-              localizationsDelegates: const [
-                GlobalCupertinoLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-              ],
-              supportedLocales: const [
-                Locale(ConfigConstants.language, ConfigConstants.country)
-              ],
+
             );
           },
         ));
