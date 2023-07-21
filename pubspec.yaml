@@ -18,10 +18,11 @@ dependencies:
 
 # packages that used for voice record project
   flutter_sound: ^9.2.13
+  audioplayers: ^4.1.0
   permission_handler: 8.1.6
   path_provider: ^2.0.2
   simple_ripple_animation: ^0.0.7
-  social_media_recorder: ^0.2.0
+  file_picker: ^5.0.0
 #templete packages
   get_it: ^7.2.0
   cupertino_icons: ^1.0.2
@@ -29,9 +30,6 @@ dependencies:
   flutter_bloc: ^8.1.2
   equatable: ^2.0.5
   shared_preferences: ^2.2.0
-
-dependency_overrides:
-  permission_handler: ^10.2.0
 
 dev_dependencies:
   flutter_test:
