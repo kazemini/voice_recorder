@@ -9,7 +9,7 @@ class MyVoiceRecorder {
   final AudioPlayer audioPlayer = AudioPlayer();
   final FlutterSoundRecorder instance = FlutterSoundRecorder();
 
-  late String _path;
+  String _path = '';
   bool _isTemp = false;
   File? audioFile;
   bool isPlaying = false;
@@ -17,6 +17,7 @@ class MyVoiceRecorder {
   Duration _position = Duration.zero;
 
   bool get isTemp => _isTemp;
+  String get path => _path;
 
   set isTemp(bool value) {
     _isTemp = value;

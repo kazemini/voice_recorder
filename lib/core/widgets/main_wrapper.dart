@@ -1,17 +1,8 @@
-import 'package:audioplayers/audioplayers.dart';
+import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:simple_ripple_animation/simple_ripple_animation.dart';
-import 'package:template/config/theme/theme_cubit.dart';
 import 'package:template/service_voice_recorder.dart';
-
-import '../../config/utils/enums_config.dart';
-import '../../locator.dart';
-import '../database/shared_preferences_db.dart';
-import '../interface/app_router.dart';
 
 // TODO this page only for test, pls convert to clean arch :)
 //? contain page route & change theme test ;)
@@ -28,11 +19,15 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
   late final AnimationController _controller;
   late final CurvedAnimation _animation;
   String twoDigitMinutes = '00', twoDigitsSeconds = '00';
-  bool wth = false;
+  PlayerController controller = PlayerController();
+
+
   @override
   void initState() {
     super.initState();
     recorder.initRecorder();
+    initInChatVoice();
+
 
     // Listen to states : playing , paused, stopped
     recorder.audioPlayer.onPlayerStateChanged.listen((event) {
@@ -79,11 +74,18 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
         title: const Text('ضبط کننده صدا'),
         centerTitle: true,
       ),
+      backgroundColor: Colors.grey.shade200,
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [SizedBox()],
+          mainAxisSize: MainAxisSize.max,
+          children:  [
+
+            Align(alignment: Alignment.topRight, child: audio_message_model(true)),
+            SizedBox(height: 12,),
+            Align(alignment: Alignment.topLeft, child: audio_message_model(false)),
+          ],
         ),
       ),
       bottomNavigationBar: Container(
@@ -98,6 +100,113 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
       ),
     );
   }
+
+
+
+
+
+
+
+
+Future<void> initInChatVoice() async {
+  await controller.preparePlayer(
+    path: '/storage/emulated/0/Download/audio.mp3',
+    shouldExtractWaveform: true,
+    volume: 1.0,
+    noOfSamples: 100,
+  );
+  await controller.startPlayer(finishMode: FinishMode.loop);
+}
+
+  Widget audio_message_model(bool isMine) {
+    final r8 = Radius.circular(24.0);
+    final r6 = Radius.circular(6.0);
+    return Container(
+      margin: isMine ? EdgeInsets.only(right: 8.0) : EdgeInsets.only(left: 8.0),
+      width: MediaQuery.of(context).size.width * 0.8,
+      height: 100,
+      decoration: BoxDecoration(
+        color: isMine ? Color(0xFF1D91D4).withOpacity(0.9) :Colors.white70,
+        borderRadius: isMine ? BorderRadius.only(
+          bottomLeft: r8,
+          bottomRight: const Radius.circular(12.0),
+          topLeft: r8,
+          topRight: r6
+        ) :
+        BorderRadius.only(
+            bottomLeft:const Radius.circular(12.0),
+            bottomRight: r8,
+            topLeft: r6,
+            topRight: r8
+        )
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              audioFileWaveforms(isMine),
+              Container(
+                margin: EdgeInsets.only(top: 8.0,right: 12.0),
+                  child: IconButton(
+                    icon: Icon(Icons.play_circle_outline,size: 30,),
+                    color: isMine ? Colors.white : Colors.blue,
+                    onPressed: () { },
+                  )),
+              Container(
+                  margin: const EdgeInsets.only(right: 4.0),
+                  child:  Icon(Icons.more_vert,color:
+                  isMine ? Colors.white : Colors.blue,)),
+            ],
+          ),
+          Container(
+              margin: const EdgeInsets.all(8.0),
+              alignment: Alignment.bottomRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text('12:49',style: TextStyle(
+                      color: isMine ? Colors.white70 : Colors.blue),),
+                  SizedBox(width: 4.0,),
+                  Icon(Icons.check,color:
+                  isMine ? Colors.white70 : Colors.blue,)
+                ],),
+          )],
+      )
+    );
+  }
+
+
+Widget audioFileWaveforms(bool sender){
+    return Container(
+      margin: const EdgeInsets.only(left: 16.0,top: 8.0),
+      child: AudioFileWaveforms(
+        size: Size(MediaQuery.of(context).size.width * 0.50, 40.0),
+        playerController: controller,
+        enableSeekGesture: true,
+        waveformType: WaveformType.long,
+        decoration: BoxDecoration(
+            color: sender ? Colors.lightBlueAccent.shade100 : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(6.0)
+        ),
+        playerWaveStyle: sender ? PlayerWaveStyle(
+          fixedWaveColor: Colors.white,
+          liveWaveColor: Colors.blue,
+          seekLineColor: Colors.blueGrey,
+          spacing: 8,
+        ) :
+        PlayerWaveStyle(
+          fixedWaveColor: Colors.lightBlueAccent,
+          liveWaveColor: Colors.blueAccent,
+          seekLineColor: Colors.indigo,
+          spacing: 8,
+        )
+      ),
+    );
+}
+
 
   Widget _buildBottomSection() {
     return Row(
