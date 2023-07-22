@@ -70,25 +70,26 @@ class MyVoiceRecorder {
   }
 
   Future<void> play() async {
-    await audioPlayer.resume();
+        await audioPlayer.resume();
   }
 
   Future pause() async {
     await audioPlayer.pause();
-    isPlaying = false;
   }
 
   Future<void> deleteTempAudio() async {
-    await audioPlayer.stop();
+    audioFile!.copySync('$_path/audio.mp3');
+    await audioPlayer.release();
     audioFile = null;
-    position = Duration.zero;
-    duration = Duration.zero;
+    //position = Duration.zero;
+    //duration = Duration.zero;
     _isTemp = false;
     isPlaying = false;
   }
 
   Future<void> setAudio() async {
-    audioPlayer.setSourceDeviceFile(audioFile!.path);
+    await audioPlayer.setSourceDeviceFile(audioFile!.path);
+    await audioPlayer.setReleaseMode(ReleaseMode.stop);
   }
 
   String formatTime(Duration duration) {

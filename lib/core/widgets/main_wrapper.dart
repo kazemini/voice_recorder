@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_sound/flutter_sound.dart';
@@ -117,7 +118,7 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
               children: <Widget>[
                 Visibility(
                   visible: !recorder.isRecordedTemp(),
-                  replacement: _RecordedTempWidget(),
+                  replacement: _recordedTempWidget(),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: <Widget>[
@@ -253,7 +254,7 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
     );
   }
 
-  Row _RecordedTempWidget() {
+  Row _recordedTempWidget() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
@@ -273,6 +274,7 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
               min: 0,
               max: recorder.duration.inSeconds.toDouble(),
               value: recorder.position.inSeconds.toDouble(),
+              activeColor: Colors.lightBlueAccent,
               onChanged: (double value) async{
                 final position = Duration(seconds: value.toInt());
                 await  recorder.audioPlayer.seek(position);
