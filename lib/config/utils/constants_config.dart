@@ -4,7 +4,7 @@ class ConfigConstants {
   // TODO config project
 
   static const bool isMaterial3 = true;
-  static const Color colorScheme = Colors.green; // * it can be any type of colors such as RGBO
+  static const Color colorScheme = Colors.blue; // * it can be any type of colors such as RGBO
   static const fontFamily = 'Shabnam';
   static const defaultTheme = ThemeMode.light;
 
