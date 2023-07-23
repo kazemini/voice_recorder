@@ -1,51 +1,33 @@
 import 'dart:io';
+import 'dart:math';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class MyVoiceRecorder {
-  final AudioPlayer audioPlayer = AudioPlayer();
-  final FlutterSoundRecorder instance = FlutterSoundRecorder();
+  final FlutterSoundRecorder soundRecorder = FlutterSoundRecorder();
 
-  String _path = '';
-  bool _isTemp = false;
+  String tempPath = '';
+  bool isTemp = false;
   File? audioFile;
-  bool isPlaying = false;
-  Duration _duration = Duration.zero;
-  Duration _position = Duration.zero;
+  String get path => tempPath;
 
-  bool get isTemp => _isTemp;
-  String get path => _path;
+  late Directory saveDir;
 
-  set isTemp(bool value) {
-    _isTemp = value;
-  }
+  bool isRecording() => soundRecorder.isRecording;
 
-  bool isRecording() => instance.isRecording;
-
-  bool isRecordedTemp() => instance.isStopped & _isTemp;
-
-  Duration get duration => _duration;
-
-  Duration get position => _position;
-
-  set duration(Duration value) {
-    _duration = value;
-  }
-
-  set position(Duration value) {
-    _position = value;
-  }
+  bool isRecordedTemp() => soundRecorder.isStopped & isTemp;
 
   Future initRecorder([Duration duration = const Duration(milliseconds: 500)]) async {
-    final _directory = await getExternalStorageDirectory();
-    _path = '/storage/emulated/0/Download';
+    final directory = await getApplicationDocumentsDirectory();
+    saveDir = (await getExternalStorageDirectory())!;
+
+    tempPath = directory.path;
 
     await getPermission();
-    await instance.openRecorder();
-    instance.setSubscriptionDuration(duration);
+    await soundRecorder.openRecorder();
+    soundRecorder.setSubscriptionDuration(duration);
   }
 
   Future<void> getPermission() async {
@@ -58,40 +40,28 @@ class MyVoiceRecorder {
   }
 
   Future record() async {
-    await instance.startRecorder(toFile: '$_path/audio-test');
-    _isTemp = true;
+    await soundRecorder.startRecorder(toFile: getTempPath());
+    isTemp = true;
   }
 
-  Future stop() async {
-    final path = await instance.stopRecorder();
+  Future<String> stop() async {
+    final path = await soundRecorder.stopRecorder();
     audioFile = File(path!);
-    print('Recorded path is : $path');
-    //isTemp = false;
-    setAudio();
+    return audioFile!.path;
   }
 
-  Future<void> play() async {
-        await audioPlayer.resume();
+  Future<void> deleteTempVoice() async {
+    isTemp = false;
+   final deleted = await audioFile!.delete();
+   print('DELETED PATH IS: ${deleted.path}');
   }
 
-  Future pause() async {
-    await audioPlayer.pause();
-  }
-
-  Future<void> deleteTempAudio() async {
-    audioFile!.copySync('$_path/audio.mp3');
-    await audioPlayer.release();
+  Future<void> saveTempVoice() async {
+    audioFile!.copySync(getSavePath());
     audioFile = null;
-    //position = Duration.zero;
-    //duration = Duration.zero;
-    _isTemp = false;
-    isPlaying = false;
+    isTemp = false;
   }
 
-  Future<void> setAudio() async {
-    await audioPlayer.setSourceDeviceFile(audioFile!.path);
-    await audioPlayer.setReleaseMode(ReleaseMode.stop);
-  }
 
   String formatTime(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -106,4 +76,24 @@ class MyVoiceRecorder {
       seconds,
     ].join(':');
   }
+
+  String getTempPath() {
+    int length = 8;
+    const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+    Random _rnd = Random();
+    String generatedString = String.fromCharCodes(Iterable.generate(
+        length , (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+    return '$tempPath/cached_voice_$generatedString}';
+  }
+  String getSavePath() {
+    int length = 8;
+    const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+    Random _rnd = Random();
+    String generatedString = String.fromCharCodes(Iterable.generate(
+        length , (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+    return '${saveDir.path}/voice_$generatedString}';
+  }
+
+
 }
+

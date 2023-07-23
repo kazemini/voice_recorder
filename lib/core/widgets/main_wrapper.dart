@@ -2,6 +2,7 @@ import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:simple_ripple_animation/simple_ripple_animation.dart';
+import 'package:template/service_audio_player.dart';
 import 'package:template/service_voice_recorder.dart';
 
 // TODO this page only for test, pls convert to clean arch :)
@@ -16,6 +17,7 @@ class MainWrapper extends StatefulWidget {
 
 class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin {
   MyVoiceRecorder recorder = MyVoiceRecorder();
+  ServiceAudioPlayer audioPlayer = ServiceAudioPlayer();
   late final AnimationController _controller;
   late final CurvedAnimation _animation;
   String twoDigitMinutes = '00', twoDigitsSeconds = '00';
@@ -28,24 +30,24 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
     recorder.initRecorder();
     initInChatVoice();
 
-
     // Listen to states : playing , paused, stopped
-    recorder.audioPlayer.onPlayerStateChanged.listen((event) {
+    audioPlayer.player.onPlayerStateChanged.listen((event) {
       setState(() {
-        recorder.isPlaying = (event.name == 'playing');
+        audioPlayer.isPlaying = (event.name == 'playing');
       });
     });
 
     // Listen to audio duration
-    recorder.audioPlayer.onDurationChanged.listen((event) {
+    audioPlayer.player.onDurationChanged.listen((event) {
       setState(() {
-        recorder.duration = event;
+        audioPlayer.duration = event;
       });
     });
 
-    recorder.audioPlayer.onPositionChanged.listen((event) {
+    // Listen to audio position
+    audioPlayer.player.onPositionChanged.listen((event) {
       setState(() {
-        recorder.position = event;
+        audioPlayer.position = event;
       });
     });
 
@@ -62,8 +64,8 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
 
   @override
   void dispose() {
-    recorder.instance.closeRecorder();
-    recorder.audioPlayer.dispose();
+    recorder.soundRecorder.closeRecorder();
+    audioPlayer.player.dispose();
     super.dispose();
   }
 
@@ -104,8 +106,66 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
 
 
 
-
-
+  Widget _buildBottomSection() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: <Widget>[
+        Expanded(
+          child: Container(
+            margin: EdgeInsets.only(bottom: 8.0, left: 8.0, right: 8.0, top: 4.0),
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: Color(0xFFFFFFFF),
+              boxShadow: [BoxShadow(color: Colors.grey.shade400, blurRadius: 3)],
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Visibility(
+                  visible: !recorder.isRecordedTemp(),
+                  replacement: _recordedTempWidget(),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      _microphoneWidget(),
+                      Visibility(
+                        visible: recorder.isRecording(),
+                        replacement: _messageBody(),
+                        child: _recorderBody(),
+                      ),
+                      !recorder.isRecording()
+                          ? IconButton(
+                        tooltip: 'انتخاب فایل',
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.attach_file,
+                          color: Colors.blueGrey,
+                        ),
+                      )
+                          : const SizedBox()
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+        !recorder.isRecording()
+            ? Container(
+          margin: EdgeInsets.only(bottom: 8.0, right: 8.0),
+          padding: EdgeInsets.zero,
+          decoration: ShapeDecoration(color: Colors.blue, shape: CircleBorder()),
+          child: IconButton(
+            icon: Icon(Icons.send_rounded, color: Colors.white),
+            onPressed: () {},
+          ),
+        )
+            : const SizedBox()
+      ],
+    );
+  }
 
 
 Future<void> initInChatVoice() async {
@@ -207,68 +267,6 @@ Widget audioFileWaveforms(bool sender){
     );
 }
 
-
-  Widget _buildBottomSection() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: <Widget>[
-        Expanded(
-          child: Container(
-            margin: EdgeInsets.only(bottom: 8.0, left: 8.0, right: 8.0, top: 4.0),
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: Color(0xFFFFFFFF),
-              boxShadow: [BoxShadow(color: Colors.grey.shade400, blurRadius: 3)],
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Visibility(
-                  visible: !recorder.isRecordedTemp(),
-                  replacement: _recordedTempWidget(),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: <Widget>[
-                      _microphoneWidget(),
-                      Visibility(
-                        visible: recorder.isRecording(),
-                        replacement: _messageBody(),
-                        child: _recorderBody(),
-                      ),
-                      !recorder.isRecording()
-                          ? IconButton(
-                              tooltip: 'انتخاب فایل',
-                              onPressed: () {},
-                              icon: Icon(
-                                Icons.attach_file,
-                                color: Colors.blueGrey,
-                              ),
-                            )
-                          : const SizedBox()
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-        !recorder.isRecording()
-            ? Container(
-                margin: EdgeInsets.only(bottom: 8.0, right: 8.0),
-                padding: EdgeInsets.zero,
-                decoration: ShapeDecoration(color: Colors.blue, shape: CircleBorder()),
-                child: IconButton(
-                  icon: Icon(Icons.send_rounded, color: Colors.white),
-                  onPressed: () {},
-                ),
-              )
-            : const SizedBox()
-      ],
-    );
-  }
-
   Container _microphoneWidget() {
     return Container(
       alignment: Alignment.centerLeft,
@@ -279,7 +277,7 @@ Widget audioFileWaveforms(bool sender){
           setState(() {});
         },
         onPointerUp: (details) async {
-          await recorder.stop();
+          await recorder.stop().then((value) => audioPlayer.setUpAudio(value));
           setState(() {});
         },
         child: recorder.isRecording()
@@ -326,7 +324,7 @@ Widget audioFileWaveforms(bool sender){
         alignment: Alignment.center,
         padding: EdgeInsets.only(left: 24),
         child: StreamBuilder<RecordingDisposition>(
-            stream: recorder.instance.onProgress,
+            stream: recorder.soundRecorder.onProgress,
             builder: (context, snapshot) {
               final duration = snapshot.hasData ? snapshot.data!.duration : Duration.zero;
               String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -368,8 +366,9 @@ Widget audioFileWaveforms(bool sender){
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
         IconButton(
-            onPressed: () {
-              recorder.deleteTempAudio();
+            onPressed: () async{
+             await recorder.deleteTempVoice();
+             await audioPlayer.deallocate();
               setState(() {});
             },
             icon: const Icon(
@@ -377,27 +376,27 @@ Widget audioFileWaveforms(bool sender){
               size: 25,
               color: Colors.red,
             )),
-        Text(recorder.formatTime(recorder.position)),
+        Text(recorder.formatTime(audioPlayer.position)),
         Expanded(
             child: Slider(
               min: 0,
-              max: recorder.duration.inSeconds.toDouble(),
-              value: recorder.position.inSeconds.toDouble(),
+              max: audioPlayer.duration.inSeconds.toDouble(),
+              value: audioPlayer.position.inSeconds.toDouble(),
               activeColor: Colors.lightBlueAccent,
               onChanged: (double value) async{
                 final position = Duration(seconds: value.toInt());
-                await  recorder.audioPlayer.seek(position);
+                await  audioPlayer.player.seek(position);
               },
             )
         ),
-      Text(recorder.formatTime(recorder.duration)),
+      Text(recorder.formatTime(audioPlayer.duration)),
         IconButton(
                 onPressed: () async {
-                  recorder.isPlaying ? await recorder.pause() :
-                  await recorder.play();
+                  audioPlayer.isPlaying ? await audioPlayer.pause() :
+                  await audioPlayer.play();
                   },
                 icon: Icon(
-                  recorder.isPlaying ? Icons.pause_circle_outline :
+                  audioPlayer.isPlaying ? Icons.pause_circle_outline :
                   Icons.play_circle_outline,
                   color: Colors.blue,
                   size: 25,
