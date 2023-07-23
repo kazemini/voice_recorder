@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:template/core/database/shared_preferences_db.dart';
 
 class MyVoiceRecorder {
   final FlutterSoundRecorder soundRecorder = FlutterSoundRecorder();
@@ -56,7 +57,8 @@ class MyVoiceRecorder {
    print('DELETED PATH IS: ${deleted.path}');
   }
 
-  Future<void> saveTempVoice() async {
+  Future<void> saveToDirectory() async {
+    SharedPreferencesDB.setPath(getSavePath());
     audioFile!.copySync(getSavePath());
     audioFile = null;
     isTemp = false;

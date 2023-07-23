@@ -7,7 +7,10 @@ import '../../config/utils/enums_config.dart';
 class SharedPreferencesDB {
 
   static const String _theme = 'theme';
+  static const String _paths = 'path';
+
   static late SharedPreferences _preferences;
+
   static Future init() async =>
       _preferences = await SharedPreferences.getInstance();
 
@@ -22,4 +25,17 @@ class SharedPreferencesDB {
     return _preferences.getInt(_theme) ?? 0;
   }
 
+
+
+  //? save path into db
+  static void setPath(String newPath) async {
+    List<String> path = getPaths();
+    path.add(newPath);
+    await _preferences.setStringList(_paths,path);
+  }
+
+  //? get path from db
+  static List<String> getPaths() {
+    return _preferences.getStringList(_paths) ?? <String>[];
+  }
 }
