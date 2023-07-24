@@ -57,11 +57,14 @@ class MyVoiceRecorder {
    print('DELETED PATH IS: ${deleted.path}');
   }
 
-  Future<void> saveToDirectory() async {
-    SharedPreferencesDB.setPath(getSavePath());
-    audioFile!.copySync(getSavePath());
+  Future<String> saveToDirectory() async {
+    String path = getSavePath();
+    SharedPreferencesDB.setPath(path);
+    audioFile!.copySync(path);
     audioFile = null;
     isTemp = false;
+
+    return path;
   }
 
 

@@ -4,6 +4,7 @@ import 'package:flutter_sound/flutter_sound.dart';
 import 'package:simple_ripple_animation/simple_ripple_animation.dart';
 import 'package:template/service_audio_player.dart';
 import 'package:template/service_voice_recorder.dart';
+import 'package:template/service_wave_audio_player.dart';
 
 import '../database/shared_preferences_db.dart';
 
@@ -20,16 +21,33 @@ class MainWrapper extends StatefulWidget {
 class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin {
   MyVoiceRecorder recorder = MyVoiceRecorder();
   ServiceAudioPlayer audioPlayer = ServiceAudioPlayer();
+  final List<PlayerController> _audioControllers = [];
+  late PlayerController controller;
+  ScrollController scrollController = ScrollController();
+
   late final AnimationController _controller;
   late final CurvedAnimation _animation;
   String twoDigitMinutes = '00', twoDigitsSeconds = '00';
-  PlayerController controller = PlayerController();
+  bool wth = false;
 
   @override
   void initState() {
     super.initState();
     recorder.initRecorder();
-    initInChatVoice();
+
+    SharedPreferencesDB.getPaths().forEach((element) {
+      PlayerController controller = PlayerController();
+      ServiceWaveAudioPlayer.initWavePlayer(controller, element);
+      _audioControllers.add(controller);
+    });
+
+    _audioControllers.forEach((element) {
+      element.onCompletion.listen((event) {
+        setState(() {
+
+        });
+      });
+    });
 
     // Listen to states : playing , paused, stopped
     audioPlayer.player.onPlayerStateChanged.listen((event) {
@@ -64,6 +82,11 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+  @override
   void dispose() {
     recorder.soundRecorder.closeRecorder();
     audioPlayer.player.dispose();
@@ -83,18 +106,18 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
         child: SharedPreferencesDB.getPaths().isEmpty ?
         Center(child: Text('هنوز موردی ضبط نشده!')) :
         ListView.builder(
-          itemCount:
-          SharedPreferencesDB.getPaths().length,
+          itemCount: _audioControllers.length,
+          controller: scrollController,
           itemBuilder: (BuildContext context, int index) {
             return index %2==0 ? Container(
               alignment: Alignment.topRight,
               margin: EdgeInsets.only(bottom: 8.0),
-              child:  audio_message_model(true) ,
+              child:  audio_message_model(true,_audioControllers[index]) ,
             )
                 :Container(
               alignment: Alignment.topLeft,
               margin: EdgeInsets.only(bottom: 8.0),
-              child:  audio_message_model(false) ,
+              child:  audio_message_model(false,_audioControllers[index]) ,
             );
           },
         ),
@@ -168,8 +191,18 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
                 decoration: ShapeDecoration(color: Colors.blue, shape: CircleBorder()),
                 child: IconButton(
                   icon: Icon(Icons.send_rounded, color: Colors.white),
-                  onPressed: () async{
-                    await recorder.saveToDirectory().then((value) => setState(() {}));
+                  onPressed: () async {
+                    await recorder.saveToDirectory().then((value) async {
+                      PlayerController controller = PlayerController();
+                      await ServiceWaveAudioPlayer.initWavePlayer(controller, value);
+                      setState(() {
+                        _audioControllers.add(controller);
+                      });
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        scrollController.animateTo(scrollController.position.maxScrollExtent,
+                            duration: const Duration(milliseconds: 500), curve: Curves.easeOut);
+                      });
+                    });
                   },
                 ),
               )
@@ -178,17 +211,8 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
     );
   }
 
-  Future<void> initInChatVoice() async {
-    await controller.preparePlayer(
-      path: '/storage/emulated/0/Download/audio.mp3',
-      shouldExtractWaveform: true,
-      volume: 1.0,
-      noOfSamples: 100,
-    );
-    await controller.startPlayer(finishMode: FinishMode.loop);
-  }
 
-  Widget audio_message_model(bool isMine) {
+  Widget audio_message_model(bool isMine,PlayerController controller) {
     final r8 = Radius.circular(24.0);
     final r6 = Radius.circular(6.0);
     return Container(
@@ -214,16 +238,21 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                audioFileWaveforms(isMine),
+                audioFileWaveforms(isMine,controller),
                 Container(
                     margin: EdgeInsets.only(top: 8.0, right: 12.0),
                     child: IconButton(
                       icon: Icon(
+                        ServiceWaveAudioPlayer.isPlaying(controller) ? Icons.pause_circle_outline :
                         Icons.play_circle_outline,
                         size: 30,
                       ),
                       color: isMine ? Colors.white : Colors.blue,
-                      onPressed: () {},
+                      onPressed: () {
+                        ServiceWaveAudioPlayer.playPause(controller).then((value) {
+                          setState(() {});
+                        });
+                      },
                     )),
                 Container(
                     margin: const EdgeInsets.only(right: 4.0),
@@ -258,7 +287,7 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
         ));
   }
 
-  Widget audioFileWaveforms(bool sender) {
+  Widget audioFileWaveforms(bool sender,PlayerController controller) {
     return Container(
       margin: const EdgeInsets.only(left: 16.0, top: 8.0),
       child: AudioFileWaveforms(
