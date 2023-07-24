@@ -1,4 +1,5 @@
 import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:simple_ripple_animation/simple_ripple_animation.dart';
@@ -7,9 +8,6 @@ import 'package:template/service_voice_recorder.dart';
 import 'package:template/service_wave_audio_player.dart';
 
 import '../database/shared_preferences_db.dart';
-
-// TODO this page only for test, pls convert to clean arch :)
-//? contain page route & change theme test ;)
 
 class MainWrapper extends StatefulWidget {
   const MainWrapper({Key? key}) : super(key: key);
@@ -24,11 +22,10 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
   final List<PlayerController> _audioControllers = [];
   late PlayerController controller;
   ScrollController scrollController = ScrollController();
-
+  
   late final AnimationController _controller;
   late final CurvedAnimation _animation;
   String twoDigitMinutes = '00', twoDigitsSeconds = '00';
-  bool wth = false;
 
   @override
   void initState() {
@@ -41,13 +38,18 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
       _audioControllers.add(controller);
     });
 
-    _audioControllers.forEach((element) {
-      element.onCompletion.listen((event) {
-        setState(() {
 
-        });
+
+    for (var element in _audioControllers) {
+      element.onCurrentDurationChanged.listen((event) {
+        setState(() {});
       });
-    });
+
+
+      element.onCompletion.listen((event) {
+        setState(() {});
+      });
+    }
 
     // Listen to states : playing , paused, stopped
     audioPlayer.player.onPlayerStateChanged.listen((event) {
@@ -69,7 +71,6 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
         audioPlayer.position = event;
       });
     });
-
     _controller = AnimationController(
         vsync: this, duration: const Duration(seconds: 1), lowerBound: 0.5, upperBound: 1)
       ..forward()
@@ -295,6 +296,7 @@ class _MainWrapperState extends State<MainWrapper> with TickerProviderStateMixin
           playerController: controller,
           enableSeekGesture: true,
           waveformType: WaveformType.long,
+
           decoration: BoxDecoration(
               color: sender ? Colors.lightBlueAccent.shade100 : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(6.0)),
